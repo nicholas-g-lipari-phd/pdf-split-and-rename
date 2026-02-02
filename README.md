@@ -16,37 +16,95 @@
 
 # PDF Split and Rename Tool
 
-This project provides a script to split PDF files into multiple documents and rename them according to user-defined patterns.
+A flexible Python script that splits PDF files into multiple documents based on configurable page chunks and renames them according to a specified array of filenames.
 
 ## Features
-- Split PDF files by page ranges
-- Rename output files using custom patterns
-- Simple CLI usage
+- Split PDF files by configurable page chunk size
+- Uses external command-line tools (`qpdf` or `pdfseparate`) for reliable PDF processing
+- Tool selection via environment variable (`PDF_TOOL`)
+- Automatic validation of configuration (ensures filenames match expected chunks)
+- Clear error messages and progress feedback
 
-## Usage
-1. Place your PDF file in the `input_pdfs` directory and name it `input.pdf`.
-2. Run the script:
-   ```bash
-   python pdf_split_and_rename.py
-   ```
-3. The split and renamed PDFs will be saved in the `output_pdfs` directory.
+## Installation
 
-## Customization
-- Edit `split_ranges` and `name_pattern` in `pdf_split_and_rename.py` to change how PDFs are split and named.
-
-## Requirements
-- Python 3.7+
-- PyPDF2
-
-Install dependencies:
+### Python Dependencies
 ```bash
 pip install PyPDF2
 ```
 
+### External Tools
+Install either `qpdf` (default) or `pdfseparate`:
+
+**qpdf:**
+- Windows: `choco install qpdf` or download from [qpdf.sourceforge.io](https://qpdf.sourceforge.io/)
+- Linux: `sudo apt-get install qpdf`
+- macOS: `brew install qpdf`
+
+**pdfseparate (part of poppler-utils):**
+- Windows: Download from [poppler for Windows](https://github.com/oschwartz10612/poppler-windows/releases/)
+- Linux: `sudo apt-get install poppler-utils`
+- macOS: `brew install poppler`
+
+## Usage
+
+1. **Configure the script** by editing variables at the top of `pdf_split_and_rename.py`:
+   ```python
+   input_pdf = 'input_pdfs/input.pdf'  # Path to your input PDF
+   num_pages = 3                        # Pages per chunk
+   filenames = [                        # Output filenames
+       'output_pdfs/Document_1.pdf',
+       'output_pdfs/Document_2.pdf',
+       'output_pdfs/Document_3.pdf'
+   ]
+   ```
+
+2. **Place your PDF** in the `input_pdfs` directory (or update `input_pdf` variable).
+
+3. **Run the script:**
+   ```bash
+   python pdf_split_and_rename.py
+   ```
+
+4. **Optional: Choose tool** via environment variable:
+   ```bash
+   # Use qpdf (default)
+   python pdf_split_and_rename.py
+   
+   # Use pdfseparate
+   set PDF_TOOL=pdfseparate    # Windows
+   export PDF_TOOL=pdfseparate # Linux/macOS
+   python pdf_split_and_rename.py
+   ```
+
+## How It Works
+
+1. **Page Calculation:** Reads the total number of pages from the input PDF
+2. **Validation:** Ensures the `filenames` array length matches `total_pages / num_pages`
+3. **Chunk Extraction:** Loops through the document, extracting `num_pages` per chunk
+4. **Page Range Logic:**
+   - Chunk `i` starts at page: `i * num_pages + 1` (1-based)
+   - Chunk `i` ends at page: `min((i + 1) * num_pages, total_pages)`
+5. **Tool Execution:** Calls the selected tool (`qpdf` or `pdfseparate`) to split and save
+
 ## Example
-Splits `input.pdf` into two files:
-- Pages 1-3 → `Document_1_pages_1_to_3.pdf`
-- Pages 4-6 → `Document_2_pages_4_to_6.pdf`
+
+For a 9-page PDF with `num_pages = 3`:
+- Total chunks: 9 ÷ 3 = 3
+- Required filenames: 3 entries
+- Output:
+  - `Document_1.pdf` → pages 1-3
+  - `Document_2.pdf` → pages 4-6
+  - `Document_3.pdf` → pages 7-9
+
+## Troubleshooting
+
+**"Configuration mismatch" error:**
+- Ensure your `filenames` array has the correct number of entries
+- Expected chunks = `ceil(total_pages / num_pages)`
+
+**"command not found" error:**
+- Install the required tool (`qpdf` or `pdfseparate`)
+- Ensure it's in your system PATH
 
 ## License
 MIT
